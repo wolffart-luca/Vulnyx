@@ -204,8 +204,8 @@
 
    - Bueno, luego de conseguir ese user y ese pass, descubrimos que no existe lugar útil donde utilizarlo, por lo tanto seguimos buscando. Entre todos los archivos, encontramos un ".zip" que puede interesarnos
      ```bash
-find / -name "*zip" 2>/dev/null
-•/var/www/html/wordpress/backups/cp-sharedbbdd.zip
+     find / -name "*zip" 2>/dev/null
+     #/var/www/html/wordpress/backups/cp-sharedbbdd.zip
      ```
 
    - Descargamos ese archivo, mediante un servidor y Python
