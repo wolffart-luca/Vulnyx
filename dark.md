@@ -109,5 +109,5 @@ ssh -i id_rsa root@(IP-victima)
 # Acceso concedido como root
 ```
 
-Has logrado explotar el sistema y obtener acceso como root.
+Ya somos root :D
 
