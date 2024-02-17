@@ -1,4 +1,3 @@
-```markdown
 # Vulnyx-Dark
 
 ## Reconocimiento
@@ -111,4 +110,4 @@ ssh -i id_rsa root@(IP-victima)
 ```
 
 Has logrado explotar el sistema y obtener acceso como root.
-'''
+
