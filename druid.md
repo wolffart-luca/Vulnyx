@@ -1,4 +1,3 @@
-```markdown
 # Vulnyx Druid
 
 Arp scan
